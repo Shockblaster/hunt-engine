@@ -95,6 +95,14 @@ function headingProblem(e: { id: string; title: string; dates: string; subtitle:
   return ok ? null : `heading change for ${e.title} is not one the person approved (add it to the job profile's approved_headings first)`;
 }
 
+// The headings the person approved for this opportunity, from the newest job profile.
+export function approvedHeadings(db: DatabaseSync, oppId: number): ApprovedHeading[] {
+  const prof = db.prepare(`SELECT data FROM profiles WHERE track = 'job' ORDER BY version DESC LIMIT 1`).get() as Row | undefined;
+  try { return headingsFor(((prof ? JSON.parse(String(prof.data)) : {}) as { approved_headings?: ApprovedHeading[] }).approved_headings ?? [], oppId); } catch { return []; }
+}
+// What an approved heading says counts as backed for the fact check, for that opportunity only.
+const headingText = (a: ApprovedHeading[]) => a.map((h) => `${h.dates ?? ''} ${h.subtitle ?? ''}`).join('\n');
+
 export function buildModel(master: Master, plan: Plan, approved: ApprovedHeading[] = []): { model: Model; problems: string[] } {
   const problems: string[] = [];
   const vocab = vocabulary(master);
@@ -213,10 +221,8 @@ export function buildResume(db: DatabaseSync, slug: string, oppId: number, plan:
   if (!master) throw new Error('no master resume yet: run `he resume import <file.docx>` first');
   const opp = db.prepare('SELECT o.*, org.name AS org_name FROM opportunities o LEFT JOIN organizations org ON org.id = o.organization_id WHERE o.id = ?').get(oppId) as Row | undefined;
   if (!opp) throw new Error(`opportunity ${oppId} not found`);
-  const prof = db.prepare(`SELECT data FROM profiles WHERE track = 'job' ORDER BY version DESC LIMIT 1`).get() as Row | undefined;
-  let approved: ApprovedHeading[] = [];
-  try { approved = ((prof ? JSON.parse(String(prof.data)) : {}) as { approved_headings?: ApprovedHeading[] }).approved_headings ?? []; } catch { /* no profile */ }
-  const { model, problems } = buildModel(master, plan, headingsFor(approved, oppId));
+  const approved = approvedHeadings(db, oppId);
+  const { model, problems } = buildModel(master, plan, approved);
   if (problems.some((p) => /unknown|education|heading change/.test(p))) throw new Error(`plan problems: ${problems.join('; ')}`);
 
   const dir = join(workspaceDir(slug), 'files', 'resumes');
@@ -272,7 +278,7 @@ export function buildResume(db: DatabaseSync, slug: string, oppId: number, plan:
 
   // Every number must trace to the person's claims.
   const text = plainText([model.summary ?? '', ...model.sections.flatMap((s) => [...s.entries.flatMap((e) => [e.title, e.role, e.subtitle, e.dates, ...e.bullets.map((b) => b.text)]), ...s.items.map((i) => `${i.label} ${i.text}`)])].join('\n'));
-  const fc = factCheck(db, text);
+  const fc = factCheck(db, text, headingText(approved));
   const docx = `${base}.docx`;
   writeDocx(model, docx);
   writeFileSync(`${base}.model.json`, JSON.stringify({ plan, model, trimmed, problems }, null, 2));
@@ -290,7 +296,7 @@ export function buildLetter(db: DatabaseSync, slug: string, oppId: number, body:
   if (/i am writing to apply|i hope this (letter|email) finds you/i.test(body)) problems.push('uses a stock opening line');
   const words = body.split(/\s+/).filter(Boolean).length;
   if (words > 320) problems.push(`is ${words} words; keep it under 300`);
-  const fc = factCheck(db, body);
+  const fc = factCheck(db, body, headingText(approvedHeadings(db, oppId)));
   const dir = join(workspaceDir(slug), 'files', 'letters');
   mkdirSync(dir, { recursive: true });
   const base = join(dir, `letter-${slugKey(String(opp.org_name ?? 'company'), String(opp.title)).replace(/\|/g, '-').slice(0, 60)}-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}`);

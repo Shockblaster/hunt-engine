@@ -173,3 +173,12 @@ test('an approved heading applies only to the opportunities it names', async () 
   assert.deepEqual(headingsFor(a, 26).map((h) => h.entry), ['e1', 'e2']);
   assert.deepEqual(headingsFor(a, 29).map((h) => h.entry), ['e2'], 'opportunity 29 does not get the 26/27 heading');
 });
+test('an approved heading backs its own numbers in the fact check, for its opportunities only', async () => {
+  const { approvedHeadings } = await import('../render.ts');
+  const { factCheck } = await import('../docs.ts');
+  const db = openMemoryDb();
+  db.prepare(`INSERT INTO profiles (track, version, data) VALUES ('job', 1, ?)`).run(JSON.stringify({ approved_headings: [{ entry: 'e1', dates: 'Jul 2025 – Jun 2028 (expected)', for_opportunities: [26] }] }));
+  const text = (id: number) => approvedHeadings(db, id).map((h) => `${h.dates} ${h.subtitle ?? ''}`).join('\n');
+  assert.equal(factCheck(db, 'Graduating June 2028', text(26)).ok, true);
+  assert.equal(factCheck(db, 'Graduating June 2028', text(29)).ok, false, 'another opportunity does not get the approval');
+});
