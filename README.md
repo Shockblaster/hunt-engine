@@ -14,8 +14,6 @@ Every action is recorded in a local database and shown on a dashboard at http://
 ## Install (Windows or macOS)
 Needs Node 24+, Google Chrome, Claude Code, and `uv` (for the LinkedIn, Indeed and Naukri search).
 
-This repository is private. If you were invited, accept the invitation first (GitHub emails it to you, or open https://github.com/Shockblaster/hunt-engine/invitations), and make sure git can reach GitHub as you (`gh auth login`, or your usual git credentials).
-
 ```bash
 git clone https://github.com/Shockblaster/hunt-engine.git hunt-engine && cd hunt-engine
 npm install && npm link          # gives you the `he` command
