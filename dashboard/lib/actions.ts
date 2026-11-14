@@ -23,7 +23,22 @@ async function he(args: string[]): Promise<void> {
   if (!ws) throw new Error("No workspace is open");
   const env: NodeJS.ProcessEnv = { ...process.env, HE_DECIDER_KEY: deciderKey() };
   delete env.HE_HEADLESS;
-  await run(process.execPath, [CLI, ...args, "--ws", ws.slug], { env });
+  await runAndReport(args, ws.slug, env);
+}
+
+// A refused decision (for example an item that changed after it was sent for review) shows as a message on the
+// page instead of crashing it.
+async function runAndReport(args: string[], slug: string, env: NodeJS.ProcessEnv): Promise<void> {
+  const jar = await cookies();
+  try {
+    await run(process.execPath, [CLI, ...args, "--ws", slug], { env });
+    jar.set("he_flash", args[0] === "approval" ? `Done: ${args[3] === "approve" ? "approved" : "rejected"}.` : "Done.", { path: "/", maxAge: 60 });
+  } catch (e) {
+    const raw = String((e as { stderr?: string }).stderr || (e as Error).message || "");
+    let msg = raw;
+    try { msg = (JSON.parse(raw.trim().split("\n").pop() ?? "{}") as { error?: string }).error ?? raw; } catch { /* plain text */ }
+    jar.set("he_flash", `Not saved: ${msg.slice(0, 300)}`, { path: "/", maxAge: 60 });
+  }
 }
 
 // The only three things a person can change from the dashboard.

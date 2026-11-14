@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Overpass } from "next/font/google";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import "./globals.css";
 import { Nav } from "@/components/Nav";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
@@ -31,6 +32,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const pending = ws ? await count(`SELECT count(*) AS n FROM approvals WHERE status = 'pending'`) : 0;
   const lastRun = ws ? await one<{ started_at: string; status: string }>(`SELECT started_at, status FROM runs WHERE parent_id IS NULL ORDER BY id DESC LIMIT 1`) : undefined;
   const demo = ws ? await one<{ value: string }>(`SELECT value FROM meta WHERE key = 'demo'`) : undefined;
+  const flash = (await cookies()).get("he_flash")?.value;
 
   return (
     <html lang="en" className={overpass.variable}>
@@ -53,6 +55,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             {demo?.value === "1" ? (
               <div className="demo-banner">This is demo data made up to show the layout. None of these companies, people or messages are real.</div>
             ) : null}
+            {flash ? <div className="demo-banner" role="status">{flash}</div> : null}
             {ws ? children : <NoWorkspace />}
           </main>
         </div>
