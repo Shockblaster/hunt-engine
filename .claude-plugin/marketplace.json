@@ -1,0 +1,14 @@
+{
+  "name": "hunt-engine",
+  "owner": {
+    "name": "Arhaan Wadhwa"
+  },
+  "plugins": [
+    {
+      "name": "hunt-engine",
+      "source": "./",
+      "description": "Job hunt, freelance hunt and lead research skills on one shared engine"
+    }
+  ],
+  "description": "Hunt Engine: job hunt, freelance hunt and lead research skills on one local, self-improving engine."
+}

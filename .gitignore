@@ -1,0 +1,8 @@
+node_modules/
+.next/
+*.sqlite
+*.sqlite-*
+.env
+.env.*
+.playwright-mcp/
+dashboard/.next/

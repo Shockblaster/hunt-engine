@@ -1,0 +1,136 @@
+[
+  {
+    "name": "planted-problems",
+    "track": "freelance",
+    "task": "Review messages 1 and 2 as the quality gate before they are sent. Fix what can be fixed, record each check, and mark a message queued only if it passes.",
+    "seed": {
+      "claims": [
+        {
+          "text": "Founder of a web studio that has delivered sites for 15+ paying clients",
+          "evidence": "resume",
+          "contexts": "all"
+        },
+        {
+          "text": "Head of Finance at the college's social entrepreneurship society",
+          "evidence": "resume",
+          "contexts": "all"
+        },
+        {
+          "text": "Built a premium clothing e-commerce site with Razorpay payments",
+          "evidence": "resume",
+          "contexts": "all"
+        }
+      ],
+      "organizations": [
+        {
+          "name": "Bloom Bakery",
+          "domain": "bloombakery.example.com",
+          "tier": "small",
+          "rating": 4.7,
+          "reviews": 320,
+          "city": "Mumbai",
+          "source_url": "https://maps.example.com/bloom"
+        }
+      ],
+      "people": [
+        {
+          "organization_id": 1,
+          "name": "Meera Iyer",
+          "role": "Owner",
+          "email": "meera@bloombakery.example.com",
+          "source_url": "https://www.instagram.com/bloombakery.example"
+        }
+      ],
+      "opportunities": [
+        {
+          "track": "freelance",
+          "kind": "prospect",
+          "organization_id": 1,
+          "person_id": 1,
+          "title": "Website for Bloom Bakery",
+          "dedupe_key": "eval-qa-1",
+          "source": "maps",
+          "fit_score": 4.1,
+          "stage": "shortlisted",
+          "description": "4.7 stars from 320 reviews, no website; orders only by phone."
+        }
+      ],
+      "messages": [
+        {
+          "track": "freelance",
+          "channel": "email",
+          "direction": "out",
+          "person_id": 1,
+          "organization_id": 1,
+          "opportunity_id": 1,
+          "to_address": "meera@bloombakery.example.com",
+          "subject": "Hi {{first_name}}",
+          "body": "I hope this email finds you well — I managed a ₹50 lakh budget as Head of Finance and have built 40+ websites, so I'd love to help {{company}} get online. We're passionate about leveraging synergy for bakeries.",
+          "status": "drafted",
+          "variant": {
+            "angle": "gap_seen"
+          }
+        },
+        {
+          "track": "freelance",
+          "channel": "email",
+          "direction": "out",
+          "person_id": 1,
+          "organization_id": 1,
+          "opportunity_id": 1,
+          "to_address": "meera@bloombakery.example.com",
+          "subject": "bloom online orders",
+          "body": "Hi Meera,\n\nBloom has 4.7 stars from 320 reviews but orders still come in by phone. I run a small web studio that has delivered sites for 15+ paying clients, including a clothing store that takes Razorpay payments.\n\nWant me to send a one-page mock-up of an order page for Bloom?\n\nIf you would rather not hear from me, reply \"no thanks\" and I will not write again.",
+          "status": "drafted",
+          "variant": {
+            "angle": "gap_seen"
+          }
+        }
+      ]
+    },
+    "checks": [
+      {
+        "type": "sql",
+        "label": "message 1 was either cleaned up or held back with the reasons recorded",
+        "sql": "SELECT count(*) AS n FROM messages m WHERE m.id = 1 AND ((m.body NOT LIKE '%50 lakh%' AND m.body NOT LIKE '%{{%' AND m.body NOT LIKE '%40+%' AND m.body NOT LIKE '%' || char(8212) || '%') OR (m.status <> 'queued' AND (SELECT count(*) FROM verifications v WHERE v.ref_table='messages' AND v.ref_id=1 AND v.result='fail') >= 1))",
+        "op": "=",
+        "value": 1
+      },
+      {
+        "type": "sql",
+        "label": "message 1 is not queued unless it was fully fixed",
+        "sql": "SELECT count(*) AS n FROM messages WHERE id = 1 AND status = 'queued' AND (body LIKE '%50 lakh%' OR body LIKE '%{{%' OR body LIKE '%40+%')",
+        "op": "=",
+        "value": 0
+      },
+      {
+        "type": "sql",
+        "label": "the clean message passed",
+        "sql": "SELECT count(*) AS n FROM messages WHERE id = 2 AND status = 'queued'",
+        "op": "=",
+        "value": 1
+      },
+      {
+        "type": "sql",
+        "label": "checks were recorded",
+        "sql": "SELECT count(*) AS n FROM verifications WHERE ref_table = 'messages'",
+        "op": ">=",
+        "value": 3
+      },
+      {
+        "type": "sql",
+        "label": "a failure was recorded for message 1",
+        "sql": "SELECT count(*) AS n FROM verifications WHERE ref_table = 'messages' AND ref_id = 1 AND result IN ('fail','warn')",
+        "op": ">=",
+        "value": 1
+      },
+      {
+        "type": "sql",
+        "label": "the writer was told what was wrong",
+        "sql": "SELECT count(*) AS n FROM agent_notes WHERE to_agent IN ('outreach','all')",
+        "op": ">=",
+        "value": 1
+      }
+    ]
+  }
+]

@@ -1,0 +1,28 @@
+{
+  "name": "hunt-engine",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Three self-improving multi-agent skills (job hunt, freelance hunt, lead research) on one local engine",
+  "engines": {
+    "node": ">=24"
+  },
+  "bin": {
+    "he": "engine/cli.ts"
+  },
+  "scripts": {
+    "he": "node engine/cli.ts",
+    "test": "node --test \"engine/test/*.test.ts\"",
+    "dashboard": "npm --prefix dashboard run start"
+  },
+  "dependencies": {
+    "imapflow": "^2.10.0",
+    "mailparser": "^3.14.1",
+    "nodemailer": "^10.3.1"
+  },
+  "devDependencies": {
+    "@types/mailparser": "^3.9.0",
+    "@types/node": "^24.19.2",
+    "@types/nodemailer": "^8.0.2"
+  }
+}

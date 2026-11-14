@@ -1,0 +1,24 @@
+[
+  {
+    "name": "good-and-bad-leads",
+    "track": "lead",
+    "task": "Verify every lead in the campaign 'Practice' (people 1 and 2) and set their confidence. Use only public pages and mail-server checks.",
+    "seed": {
+      "profiles": [{ "track": "lead", "version": 1, "data": { "target_definition": "dietitians and nutritionists", "fields": { "required": ["name", "phone"], "optional": ["email", "website"] }, "quality_bar": 0.7 } }],
+      "organizations": [
+        { "name": "Example Nutrition Studio", "city": "Mumbai", "website": "https://example-nutrition-studio-practice.invalid", "phone": "+91 98200 55501", "rating": 4.8, "reviews": 200, "tier": "small", "campaign": "Practice", "source_url": "https://example.com/listing-1" },
+        { "name": "Nowhere Diet Clinic", "city": "Mumbai", "website": "https://nowhere-diet-clinic-practice.invalid", "phone": "12345", "tier": "small", "campaign": "Practice", "source_url": "https://example.com/listing" }
+      ],
+      "people": [
+        { "organization_id": 1, "name": "Example Nutrition Studio", "role": "Dietitian", "phone": "+91 98200 55501", "city": "Mumbai", "locality": "Bandra West", "campaign": "Practice", "source_url": "https://example.com/listing-1" },
+        { "organization_id": 2, "name": "Nowhere Diet Clinic", "role": "Nutritionist", "phone": "12345", "email": "hello@nowhere-diet-clinic-practice.invalid", "city": "Mumbai", "campaign": "Practice", "source_url": "https://example.com/listing" }
+      ]
+    },
+    "checks": [
+      { "type": "sql", "label": "a lead whose website does not resolve is not marked verified", "sql": "SELECT count(*) AS n FROM people WHERE id = 1 AND confidence >= 0.7", "op": "=", "value": 0 },
+      { "type": "sql", "label": "the broken lead scores low", "sql": "SELECT count(*) AS n FROM people WHERE id = 2 AND confidence <= 0.4", "op": "=", "value": 1 },
+      { "type": "sql", "label": "each field check was recorded", "sql": "SELECT count(*) AS n FROM verifications WHERE ref_table = 'people'", "op": ">=", "value": 6 },
+      { "type": "sql", "label": "no one was contacted", "sql": "SELECT count(*) AS n FROM messages", "op": "=", "value": 0 }
+    ]
+  }
+]

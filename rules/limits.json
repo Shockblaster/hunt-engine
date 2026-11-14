@@ -1,0 +1,28 @@
+{
+  "min_fit": 3.5,
+  "big_company": {
+    "employees_at_least": 500,
+    "listed": true,
+    "unicorn": true,
+    "mnc": true,
+    "brand": true,
+    "dream_list": true
+  },
+  "caps_per_day": {
+    "email_job": 25,
+    "email_outreach": 40,
+    "linkedin_connect": 15,
+    "linkedin_dm": 20,
+    "portal_submit": 15,
+    "yc_waas_per_week": 5
+  },
+  "warmup": {
+    "applies_to": ["email_outreach"],
+    "ramp": [5, 5, 8, 10, 12, 15, 18, 20, 25, 30, 35, 40]
+  },
+  "linkedin_notes_per_month": 5,
+  "max_follow_ups": 2,
+  "follow_up_days": [3, 7],
+  "send_window_ist": ["09:30", "19:00"],
+  "min_seconds_between_sends": 90
+}

@@ -1,0 +1,9 @@
+{
+  "name": "hunt-engine",
+  "version": "0.2.0",
+  "description": "Job hunt, freelance hunt and lead research: multi-agent, self-improving, local and free.",
+  "author": {
+    "name": "Arhaan Wadhwa"
+  },
+  "icon": ".claude-plugin/icon.png"
+}
