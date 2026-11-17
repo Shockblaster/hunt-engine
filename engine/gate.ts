@@ -2,6 +2,8 @@ import type { DatabaseSync } from 'node:sqlite';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import type { Row } from './db.ts';
+import { join } from 'node:path';
+import { workspaceDir } from './paths.ts';
 import { limits, verifyRules } from './rules.ts';
 import { emailSyntax, normalizeDomain, sameCompany } from './normalize.ts';
 
@@ -96,8 +98,19 @@ export function dailyCap(db: DatabaseSync, account: string | undefined, key: str
   return Math.min(cap, L.warmup.ramp[Math.min(Math.max(days, 0), L.warmup.ramp.length - 1)]);
 }
 
+// A stored path from another machine (C:\\Users\\...\\.hunt-engine\\workspaces\\x\\files\\...) is found again under this
+// machine's workspace folder, so moving to a new computer does not void the person's approvals.
+export function resolveWorkspaceFile(p: string): string | null {
+  if (existsSync(p)) return p;
+  const m = /[\\/]\.hunt-engine[\\/]workspaces[\\/]([^\\/]+)[\\/](.+)$/.exec(p);
+  if (!m) return null;
+  const local = join(workspaceDir(m[1]), ...m[2].split(/[\\/]/));
+  return existsSync(local) ? local : null;
+}
+
 function fileDigest(p: unknown): string {
-  return typeof p === 'string' && existsSync(p) ? createHash('sha256').update(readFileSync(p)).digest('hex') : String(p ?? '');
+  const real = typeof p === 'string' ? resolveWorkspaceFile(p) : null;
+  return real ? createHash('sha256').update(readFileSync(real)).digest('hex') : String(p ?? '');
 }
 
 // What the person approved: the recipient, the words and the files. Any change after approval needs a new approval.

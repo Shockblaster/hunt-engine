@@ -189,3 +189,17 @@ test('options glued into one argument are refused instead of falling back to ano
   assert.equal(r.code, 1);
   assert.match(r.err, /several options/);
 });
+
+test('a workspace file path saved on another machine is found under this machine\'s workspace folder', async () => {
+  const { resolveWorkspaceFile } = await import('../gate.ts');
+  const { workspaceDir } = await import('../paths.ts');
+  const { mkdirSync, writeFileSync } = await import('node:fs');
+  const dir = join(workspaceDir('portable-test'), 'files', 'resumes');
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, 'r.pdf'), 'x');
+  assert.equal(resolveWorkspaceFile('C:\\Users\\someone\\.hunt-engine\\workspaces\\portable-test\\files\\resumes\\r.pdf'), join(dir, 'r.pdf'));
+  assert.equal(resolveWorkspaceFile('C:\\Users\\someone\\.hunt-engine\\workspaces\\portable-test\\files\\resumes\\missing.pdf'), null);
+  assert.equal(resolveWorkspaceFile('/nowhere/else.pdf'), null);
+  const { rmSync } = await import('node:fs');
+  rmSync(workspaceDir('portable-test'), { recursive: true, force: true });
+});
