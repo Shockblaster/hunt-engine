@@ -182,3 +182,10 @@ test('an approved heading backs its own numbers in the fact check, for its oppor
   assert.equal(factCheck(db, 'Graduating June 2028', text(26)).ok, true);
   assert.equal(factCheck(db, 'Graduating June 2028', text(29)).ok, false, 'another opportunity does not get the approval');
 });
+test('options glued into one argument are refused instead of falling back to another workspace', () => {
+  const home = mkdtempSync(join(tmpdir(), 'he-glued-'));
+  he(home, 'ws', 'create', 'w', '--name', 'W');
+  const r = he(home, 'status', '--ws w --agent x');
+  assert.equal(r.code, 1);
+  assert.match(r.err, /several options/);
+});

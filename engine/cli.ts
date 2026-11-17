@@ -194,6 +194,11 @@ function status(db: DatabaseSync, slug: string): Row {
 async function main(): Promise<void> {
   const [cmd, sub, ...rest] = pos;
 
+  // "--ws arhaan --agent x" passed as ONE argument (zsh does not split an unquoted variable) would silently
+  // drop --ws and fall back to the current workspace. Refuse it instead of acting on the wrong workspace.
+  const glued = [...Object.keys(flags), ...pos].find((a) => /\s/.test(a) && /^-|--/.test(a));
+  if (glued) fail(`one argument holds several options ("${glued}"); pass each option and value as separate arguments`);
+
   // Help comes first and runs nothing: no workspace is opened, no server started, no file written.
   if (flags.help || flags.h || cmd === 'help' || !cmd) return out(usage(cmd === 'help' ? sub : cmd));
 
