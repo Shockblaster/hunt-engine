@@ -203,3 +203,12 @@ test('a workspace file path saved on another machine is found under this machine
   const { rmSync } = await import('node:fs');
   rmSync(workspaceDir('portable-test'), { recursive: true, force: true });
 });
+
+test('an approved heading can cover every application at named companies', async () => {
+  const { headingsFor } = await import('../render.ts');
+  const a = [{ entry: 'e1', dates: 'x', for_companies: ['JPMorgan Chase', 'Goldman Sachs'] }];
+  assert.equal(headingsFor(a, 99, 'JPMorganChase').length, 1);
+  assert.equal(headingsFor(a, 99, 'Goldman Sachs Services Pvt Ltd').length, 1);
+  assert.equal(headingsFor(a, 99, 'Kodo').length, 0, 'other companies keep the normal heading');
+  assert.equal(headingsFor(a, 99, null).length, 0);
+});

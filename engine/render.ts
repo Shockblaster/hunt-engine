@@ -10,7 +10,7 @@ import { htmlToPdf } from './docs.ts';
 import type { Master } from './resume.ts';
 import { entryVocabulary, loadMaster, plainText, rewriteProblems, vocabulary } from './resume.ts';
 import { factCheck } from './docs.ts';
-import { slugKey } from './normalize.ts';
+import { slugKey, sameCompany } from './normalize.ts';
 
 // ---- Format suggestion from what we know about the posting. The tailor researches and makes the final call.
 export type FormatHint = {
@@ -81,9 +81,16 @@ export type Model = {
 };
 
 // for_opportunities limits an approval to those opportunities; without it the approval holds for every application.
-export type ApprovedHeading = { entry: string; dates?: string; subtitle?: string; why?: string; for_opportunities?: number[] };
-export const headingsFor = (approved: ApprovedHeading[], oppId: number) =>
-  approved.filter((a) => !Array.isArray(a.for_opportunities) || a.for_opportunities.map(Number).includes(Number(oppId)));
+// for_companies limits it to applications at those companies (names match across spelling, e.g. "JPMorganChase").
+// With both lists, either one is enough.
+export type ApprovedHeading = { entry: string; dates?: string; subtitle?: string; why?: string; for_opportunities?: number[]; for_companies?: string[] };
+export const headingsFor = (approved: ApprovedHeading[], oppId: number, orgName?: string | null) =>
+  approved.filter((a) => {
+    const byOpp = Array.isArray(a.for_opportunities), byOrg = Array.isArray(a.for_companies);
+    if (!byOpp && !byOrg) return true;
+    return (byOpp && a.for_opportunities!.map(Number).includes(Number(oppId)))
+      || (byOrg && !!orgName && a.for_companies!.some((c) => sameCompany(c, orgName)));
+  });
 
 // A heading change must match one the person approved, field for field (whitespace-insensitive).
 function headingProblem(e: { id: string; title: string; dates: string; subtitle: string }, p: { dates?: string; subtitle?: string }, approved: ApprovedHeading[]): string | null {
@@ -98,7 +105,8 @@ function headingProblem(e: { id: string; title: string; dates: string; subtitle:
 // The headings the person approved for this opportunity, from the newest job profile.
 export function approvedHeadings(db: DatabaseSync, oppId: number): ApprovedHeading[] {
   const prof = db.prepare(`SELECT data FROM profiles WHERE track = 'job' ORDER BY version DESC LIMIT 1`).get() as Row | undefined;
-  try { return headingsFor(((prof ? JSON.parse(String(prof.data)) : {}) as { approved_headings?: ApprovedHeading[] }).approved_headings ?? [], oppId); } catch { return []; }
+  const org = db.prepare('SELECT org.name FROM opportunities o LEFT JOIN organizations org ON org.id = o.organization_id WHERE o.id = ?').get(oppId) as Row | undefined;
+  try { return headingsFor(((prof ? JSON.parse(String(prof.data)) : {}) as { approved_headings?: ApprovedHeading[] }).approved_headings ?? [], oppId, org?.name as string | undefined); } catch { return []; }
 }
 // What an approved heading says counts as backed for the fact check, for that opportunity only.
 const headingText = (a: ApprovedHeading[]) => a.map((h) => `${h.dates ?? ''} ${h.subtitle ?? ''}`).join('\n');
